@@ -2,6 +2,7 @@
 
 #include "Entity.h"
 #include "EntityManager.h"
+#include "Grid.h"
 
 #include<SFML\Graphics.hpp>
 #include "imgui.h"
@@ -35,6 +36,8 @@ class Game
 
 	//boids specific vars
 
+	Grid				m_grid;
+
 	int					m_boidsToSpawn = 200;
 
 	float				m_seperationValue = 1.5f;
@@ -46,9 +49,12 @@ class Game
 	float				m_agility = 0.05f;
 
 	bool				m_drawDebugLines = false;
+	bool				m_drawBoids = true;
+	bool				m_drawGrid = false;
 
+	sf::VertexArray		m_gridLines;
 
-
+	
 	//std::shared_ptr<Entity> m_player;
 
 	void init(const std::string& config);	//intializing game state with a config file path
@@ -80,6 +86,7 @@ class Game
 	//Boids functions
 	void spawnBoid();
 	void resetSimultaion();
+	void drawGrid();
 
 
 

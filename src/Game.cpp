@@ -98,6 +98,7 @@ void Game::init(const std::string& path)
 		m_text.setCharacterSize(m_fontConfig.S);
 		m_text.setFillColor(sf::Color(m_fontConfig.R, m_fontConfig.G, m_fontConfig.B));
 		m_text.setPosition(0, 0);
+		m_gridLines.setPrimitiveType(sf::Lines);
 
 		//spawnPlayer();
 	}
@@ -114,6 +115,11 @@ void Game::run()
 	//	some systems shouldn't (movement/input)
 	m_running = true;
 	srand(time(NULL));
+	
+	int cellsize = static_cast<int>(m_visioinDistance) + 10;
+	m_grid.init(m_window.getSize().x, m_window.getSize().y, cellsize);
+	drawGrid();
+	
 	sBoidSpawner(m_boidsToSpawn);
 	while (m_running)
 	{
@@ -469,9 +475,11 @@ void Game::sRender()
 
 		}
 
+		if(m_drawGrid)
+			m_window.draw(m_gridLines);
 
-		
-		m_window.draw(e->get<CShape>().polygon);
+		if(m_drawBoids)
+			m_window.draw(e->get<CShape>().polygon);
 	}
 
 
@@ -527,7 +535,7 @@ void Game::sCollision()
 	
 	//TODO: implement all proper collisiion between entities
 	// be sure to use the collisioin radius , not the shape radius
-	for (auto e : m_entities.getEntities())
+	for (auto &e : m_entities.getEntities())
 	{
 		/*if (e->tag() == "Enemy" || e->tag() == "SmallEnemy")
 		{
@@ -665,12 +673,20 @@ void Game::sGUI()
 	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 	ImGui::PopStyleColor(2);
 
+	float oldVisionDistance = m_visioinDistance;
 
 	ImGui::Begin("Flocking controls");
 	ImGui::SliderFloat("Max speed", &m_maxBoidSpeed, 0.0f, 5.0f);
 	ImGui::SliderFloat("Agility", &m_agility, 0.001f, 0.10f);
-	ImGui::SliderFloat("Vision Radius", &m_visioinDistance, 10.0f, 150.0f);
 	ImGui::SliderFloat("Avoid Radius", &m_avoidDistance, 10.0f, 150.0f);
+	ImGui::SliderFloat("Vision Radius", &m_visioinDistance, 10.0f, 150.0f);
+	if (m_visioinDistance != oldVisionDistance)
+	{
+		int newCellSize = static_cast<int>(m_visioinDistance) + 10;
+		m_grid.init(m_window.getSize().x, m_window.getSize().y, newCellSize);
+		drawGrid();
+	}
+
 	
 	ImGui::Separator();
 
@@ -678,11 +694,13 @@ void Game::sGUI()
 	ImGui::SliderFloat("Alignment", &m_alignmentValue, 0.0f, 2.0f);
 	ImGui::SliderFloat("Cohesion", &m_cohesionValue, 0.0f, 2.0f);
 	
-	ImGui::Separator();
+	ImGui::SeparatorText("Debug options");
 	ImGui::Checkbox("Draw debug velocity", &m_drawDebugLines);
+	ImGui::Checkbox("Draw grid lines", &m_drawGrid);
+	ImGui::Checkbox("Draw boids", &m_drawBoids);
 	
 	ImGui::Separator();
-	ImGui::SliderInt("Boids to spawn", &m_boidsToSpawn, 1, 500);
+	ImGui::SliderInt("Boids to spawn", &m_boidsToSpawn, 1, 2000);
 	if (ImGui::Button("Reset Simulation"))
 	{
 		resetSimultaion();
@@ -706,8 +724,29 @@ void Game::sFlocking()
 	//get all boid entities
 	auto& boids = m_entities.getEntities("Boid");
 
-	for (auto& b : boids)
+
+	//rebuild the grid every frame 
+	m_grid.clear();
+
+	//loop through boids to populate the grid
+	for (int i = 0; i < boids.size(); i++)
 	{
+		auto& b = boids[i];
+
+		if (!b->has<CBoid>())	continue;
+
+		auto& pos = b->get<CTransform>().pos;
+		m_grid.add(i, pos.x, pos.y);
+
+	}
+
+	std::vector<int> nearbyIndices;
+	nearbyIndices.reserve(50);
+
+	for (int i=0;i<boids.size();i++)
+	{
+		auto& b = boids[i];
+
 		if (!b->has<CBoid>()) continue;
 
 		Vec2 seperation(0, 0);
@@ -720,14 +759,15 @@ void Game::sFlocking()
 		auto& bVel = b->get<CTransform>().velocity;
 		auto& bBoid = b->get<CBoid>();
 
+		//get all nearby boids
+		m_grid.getNearby(bPos.x, bPos.y, nearbyIndices);
 
-		// 3. Compare with every OTHER boid (The "Neighbors")
-		// Note: This is O(N^2). It will get slow if N >
-		for (auto& other : boids)
+		// 3. Compare with every OTHER nearby boid (The "Neighbors")
+		for (auto& index : nearbyIndices)
 		{
-			if (other == b) continue;
+			if (index == i) continue;
 
-
+			auto& other = boids[index];
 
 			auto& oPos = other->get<CTransform>().pos;
 			auto& oVel = other->get<CTransform>().velocity;
@@ -782,8 +822,7 @@ void Game::sFlocking()
 		//coloring boids based on neighbour count
 		if (neighbours <= 0)
 		{
-			b->get<CShape>().polygon.setFillColor(sf::Color::White);
-			
+			b->get<CShape>().polygon.setFillColor(sf::Color::White);	
 		}
 		else if (neighbours <= 10)
 		{
@@ -984,7 +1023,7 @@ void Game::spawnBoid()
 
 void Game::resetSimultaion()
 {
-	auto boids = m_entities.getEntities("Boid");
+	auto& boids = m_entities.getEntities("Boid");
 	for (auto& b : boids)
 	{
 		b->destroy();
@@ -993,3 +1032,45 @@ void Game::resetSimultaion()
 	sBoidSpawner(m_boidsToSpawn);
 }
 
+void Game::drawGrid()
+{
+	int rows = m_grid.rows(), cols = m_grid.columns();
+	int totalLines = rows * cols;						//Times 2 since every line has start and end point
+
+	m_gridLines.clear();
+	m_gridLines.resize(totalLines);
+
+	int vertexIndex = 0;
+
+	//vertical lines
+	for (int i = 0; i <= cols; i++)
+	{
+		int x = i * m_grid.cellsize();
+
+		//top points
+		m_gridLines[vertexIndex].position = sf::Vector2f(x, 0);
+		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		vertexIndex++;
+		
+		//bottom points
+		m_gridLines[vertexIndex].position = sf::Vector2f(x, m_window.getSize().y);
+		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		vertexIndex++;
+	}
+
+	//horizontal lines
+	for (int j = 0; j <= rows; j++)
+	{
+		int y = j * m_grid.cellsize();
+
+		//top points
+		m_gridLines[vertexIndex].position = sf::Vector2f(0, y);
+		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		vertexIndex++;
+		
+		//bottom points
+		m_gridLines[vertexIndex].position = sf::Vector2f(m_window.getSize().x, y);
+		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		vertexIndex++;
+	}
+}
