@@ -43,8 +43,8 @@ class Game
 	float				m_seperationValue = 1.5f;
 	float				m_alignmentValue = 1.0f;
 	float				m_cohesionValue = 1.0f;
-	float				m_visioinDistance = 75.0f;
-	float				m_avoidDistance = 30.0f;
+	float				m_visionDistance = 45.0f;
+	float				m_avoidDistance = 15.0f;
 	float				m_maxBoidSpeed = 3.0f;
 	float				m_agility = 0.05f;
 

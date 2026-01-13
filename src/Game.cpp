@@ -116,7 +116,7 @@ void Game::run()
 	m_running = true;
 	srand(time(NULL));
 	
-	int cellsize = static_cast<int>(m_visioinDistance) + 10;
+	int cellsize = static_cast<int>(m_visionDistance) + 10;
 	m_grid.init(m_window.getSize().x, m_window.getSize().y, cellsize);
 	drawGrid();
 	
@@ -673,16 +673,16 @@ void Game::sGUI()
 	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 	ImGui::PopStyleColor(2);
 
-	float oldVisionDistance = m_visioinDistance;
+	float oldVisionDistance = m_visionDistance;
 
 	ImGui::Begin("Flocking controls");
 	ImGui::SliderFloat("Max speed", &m_maxBoidSpeed, 0.0f, 5.0f);
 	ImGui::SliderFloat("Agility", &m_agility, 0.001f, 0.10f);
-	ImGui::SliderFloat("Avoid Radius", &m_avoidDistance, 10.0f, 150.0f);
-	ImGui::SliderFloat("Vision Radius", &m_visioinDistance, 10.0f, 150.0f);
-	if (m_visioinDistance != oldVisionDistance)
+	ImGui::SliderFloat("Avoid Radius", &m_avoidDistance, 10.0f, 30.0f);
+	ImGui::SliderFloat("Vision Radius", &m_visionDistance, 10.0f, 65.0f);
+	if (m_visionDistance != oldVisionDistance)
 	{
-		int newCellSize = static_cast<int>(m_visioinDistance) + 10;
+		int newCellSize = static_cast<int>(m_visionDistance) + 10;
 		m_grid.init(m_window.getSize().x, m_window.getSize().y, newCellSize);
 		drawGrid();
 	}
@@ -780,7 +780,7 @@ void Game::sFlocking()
 			//}
 
 			//if within visual range
-			if (dist < (m_visioinDistance * m_visioinDistance))
+			if (dist < (m_visionDistance * m_visionDistance))
 			{
 				neighbours++;
 
@@ -1035,12 +1035,13 @@ void Game::resetSimultaion()
 void Game::drawGrid()
 {
 	int rows = m_grid.rows(), cols = m_grid.columns();
-	int totalLines = rows * cols;						//Times 2 since every line has start and end point
+	int totalVertices = ((rows+1) + (cols+1)) * 2;						//Times 2 since every line has start and end point
 
 	m_gridLines.clear();
-	m_gridLines.resize(totalLines);
+	m_gridLines.resize(totalVertices);
 
 	int vertexIndex = 0;
+	sf::Color gridColor = sf::Color(125, 125, 125);
 
 	//vertical lines
 	for (int i = 0; i <= cols; i++)
@@ -1049,12 +1050,12 @@ void Game::drawGrid()
 
 		//top points
 		m_gridLines[vertexIndex].position = sf::Vector2f(x, 0);
-		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		m_gridLines[vertexIndex].color = gridColor;
 		vertexIndex++;
 		
 		//bottom points
 		m_gridLines[vertexIndex].position = sf::Vector2f(x, m_window.getSize().y);
-		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		m_gridLines[vertexIndex].color = gridColor;
 		vertexIndex++;
 	}
 
@@ -1065,12 +1066,12 @@ void Game::drawGrid()
 
 		//top points
 		m_gridLines[vertexIndex].position = sf::Vector2f(0, y);
-		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		m_gridLines[vertexIndex].color = gridColor;
 		vertexIndex++;
 		
 		//bottom points
 		m_gridLines[vertexIndex].position = sf::Vector2f(m_window.getSize().x, y);
-		m_gridLines[vertexIndex].color = sf::Color(50, 50, 50);
+		m_gridLines[vertexIndex].color = gridColor;
 		vertexIndex++;
 	}
 }

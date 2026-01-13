@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include "Game.h"
-#include "Vec2.h"
+#include "Vec2.hpp"
 
 
 
