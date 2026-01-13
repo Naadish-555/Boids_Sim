@@ -62,7 +62,7 @@ void Game::init(const std::string& path)
 		//set up default window parameters
 		if (m_windowConfig.FS == 1)
 		{
-			m_window.create(sf::VideoMode(m_windowConfig.WW, m_windowConfig.WH), "Boids Sim", sf::Style::Fullscreen);
+			m_window.create(sf::VideoMode(m_window.getSize().x, m_window.getSize().y), "Boids Sim", sf::Style::Fullscreen);
 		}
 		else
 		{
@@ -248,18 +248,21 @@ void Game::sMovement()
 			player()->get<CTransform>().velocity.x = 0;
 		}*/
 		
-		auto& vel = e->get<CTransform>().velocity;
-		auto& shape = e->get<CShape>().polygon;
+		auto& transform = e->get<CTransform>();
+		///auto& shape = e->get<CShape>().polygon;
 
 		// 1. Calculate Rotation Angle
 		// atan2(y, x) gives radians. Convert to degrees.
-		float angle = std::atan2(vel.y, vel.x) * (180.0f / 3.14159f);
+		///float angle = std::atan2(transform.velocity.y, transform.velocity.x) * (180.0f / 3.14159f);
+
+		//transform.angle += angle;
+
 
 		// 2. Set Rotation
-		shape.setRotation(angle);
+		///shape.setRotation(angle);
 
 
-		e->get<CTransform>().pos += e->get<CTransform>().velocity;
+		transform.pos += transform.velocity;
 
 
 	}
@@ -450,48 +453,93 @@ void Game::sRender()
 		
 		m_window.draw(e->cShape->circle);
 	}*/
-	for (auto& e : m_entities.getEntities())
+
+	auto& boids = m_entities.getEntities("Boid");
+	sf::VertexArray va(sf::Triangles, boids.size() * 3);
+
+	for (size_t i = 0; i < boids.size(); i++)
 	{
-		e->get<CShape>().polygon.setPosition(e->get<CTransform>().pos.x, e->get<CTransform>().pos.y);
-		//e->get<CTransform>().angle += 1.0f * e->get<CShape>().circle.getPointCount();
-		//e->get<CShape>().circle.setRotation(e->get<CTransform>().angle);
+		auto& b = boids[i];
 
-		if (m_drawDebugLines)
-		{
-			sf::VertexArray lines(sf::Lines);
+		auto& pos = b->get<CTransform>().pos;
+		auto& vel = b->get<CTransform>().velocity;
+		auto& mesh = b->get<CMesh>();
 
-			if(e->has<CBoid>())
-			{
-				auto& pos = e->get<CTransform>().pos;
-				auto& vel = e->get<CTransform>().velocity;
-				
-				lines.append(sf::Vertex(sf::Vector2f(pos.x,pos.y), sf::Color::Red)); //start of line
+		//calculating direction vector for boids rotation
+		float len = vel.magnitude();
 
-				Vec2 endPos = pos + (vel * 20.0f);
-				lines.append(sf::Vertex(sf::Vector2f(endPos.x, endPos.y), sf::Color::Red)); //end of line
-			}
+		Vec2 dir(0.0f, -1.0f); //default facing up
 
-			m_window.draw(lines);
+		dir = { vel.x / len, vel.y / len };
 
-		}
+		//Calculate Perpendicular Vector(Side Vector) in 2D, perpendicular to (x, y) is (-y, x)
+		Vec2 perp(-dir.y, dir.x);
 
-		if(m_drawGrid)
-			m_window.draw(m_gridLines);
+		// Nose: Forward from center
+		Vec2 v1 = pos + (dir * mesh.size);
 
-		if(m_drawBoids)
-			m_window.draw(e->get<CShape>().polygon);
+		// Rear Left: Behind center, then shifted Left
+		Vec2 v2 = pos - (dir * mesh.size) + (perp * mesh.width);
+
+		// Rear Right: Behind center, then shifted Right
+		Vec2 v3 = pos - (dir * mesh.size) - (perp * mesh.width);
+
+		size_t idx = i * 3;
+
+		// Vertex 1 (Nose)
+		va[idx + 0].position = sf::Vector2f(v1.x, v1.y);
+		va[idx + 0].color = mesh.color;
+
+		// Vertex 2 (Rear Left)
+		va[idx + 1].position = sf::Vector2f(v2.x, v2.y);
+		va[idx + 1].color = mesh.color;
+
+		// Vertex 3 (Rear Right)
+		va[idx + 2].position = sf::Vector2f(v3.x, v3.y);
+		va[idx + 2].color = mesh.color;
+
+
 	}
 
+	if (m_drawBoids)
+	{
+		///m_window.draw(e->get<CShape>().polygon);
+		m_window.draw(va);
+	}
 
-	std::string score = "Score : " + std::to_string(m_score); 
-	//std::cout << score << std::endl;
-	m_text.setString(score);
-	m_window.draw(m_text);
 	
+	///e->get<CShape>().polygon.setPosition(e->get<CTransform>().pos.x, e->get<CTransform>().pos.y);
+	//e->get<CTransform>().angle += 1.0f * e->get<CShape>().circle.getPointCount();
+	//e->get<CShape>().circle.setRotation(e->get<CTransform>().angle);
 
+
+	if (m_drawDebugLines)
+	{
+		sf::VertexArray debugVelocityLines(sf::Lines);
+
+		for (auto& e : boids)
+		{
+			auto& pos = e->get<CTransform>().pos;
+			auto& vel = e->get<CTransform>().velocity;
+				
+			debugVelocityLines.append(sf::Vertex(sf::Vector2f(pos.x,pos.y), sf::Color::Red)); //start of line
+
+			Vec2 endPos = pos + (vel * 20.0f);
+			debugVelocityLines.append(sf::Vertex(sf::Vector2f(endPos.x, endPos.y), sf::Color::Red)); //end of line
+		}
+
+		m_window.draw(debugVelocityLines);
+
+	}
+
+	if(m_drawGrid)
+		m_window.draw(m_gridLines);
+
+	//std::string score = "Score : " + std::to_string(m_score); 
+	////std::cout << score << std::endl;
+	//m_text.setString(score);
+	//m_window.draw(m_text);
 	
-
-
 
 	ImGui::SFML::Render(m_window);
 
@@ -630,28 +678,31 @@ void Game::sCollision()
 		//screen wrapping
 		if (e->tag() == "Boid")
 		{
-			auto& shape = e->get<CShape>();
+			///auto& shape = e->get<CShape>();
 			auto& transform = e->get<CTransform>();
 			
 			//float radius = shape.circle.getRadius();
-			float width = shape.polygon.getLocalBounds().width;
-			float height = shape.polygon.getLocalBounds().height;
+			///float width = shape.polygon.getLocalBounds().width;
+			///float height = shape.polygon.getLocalBounds().height;
+
+			float height = e->get<CMesh>().size;
+			float width = e->get<CMesh>().width;
 
 
 			if (transform.pos.y < -height)
 			{
-				transform.pos.y = m_windowConfig.WH + height;
+				transform.pos.y = m_window.getSize().y + height;
 			}
-			else if (transform.pos.y > m_windowConfig.WH + height)
+			else if (transform.pos.y > m_window.getSize().y + height)
 			{
 				transform.pos.y = -height;
 			}
 
 			if (transform.pos.x < -width)
 			{
-				transform.pos.x = m_windowConfig.WW + width;
+				transform.pos.x = m_window.getSize().x + width;
 			}
-			else if (transform.pos.x > m_windowConfig.WW + width)
+			else if (transform.pos.x > m_window.getSize().x + width)
 			{
 				transform.pos.x = -width;        
 			}
@@ -700,7 +751,7 @@ void Game::sGUI()
 	ImGui::Checkbox("Draw boids", &m_drawBoids);
 	
 	ImGui::Separator();
-	ImGui::SliderInt("Boids to spawn", &m_boidsToSpawn, 1, 2000);
+	ImGui::SliderInt("Boids to spawn", &m_boidsToSpawn, 1, 10000);
 	if (ImGui::Button("Reset Simulation"))
 	{
 		resetSimultaion();
@@ -710,9 +761,7 @@ void Game::sGUI()
 	ImGui::SeparatorText("Performance");
 
 	// %.1f means "floating point with 1 decimal place"
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-		1000.0f / ImGui::GetIO().Framerate,
-		ImGui::GetIO().Framerate);
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 
 
@@ -724,7 +773,7 @@ void Game::sFlocking()
 	//get all boid entities
 	auto& boids = m_entities.getEntities("Boid");
 
-
+	std::cout << "Boid Count: " << boids.size() << "\n";
 	//rebuild the grid every frame 
 	m_grid.clear();
 
@@ -769,6 +818,8 @@ void Game::sFlocking()
 
 			auto& other = boids[index];
 
+			nearbyIndices.clear();
+
 			auto& oPos = other->get<CTransform>().pos;
 			auto& oVel = other->get<CTransform>().velocity;
 
@@ -778,6 +829,10 @@ void Game::sFlocking()
 			//{
 			//	std::cout << "DistSq: " << distsq << " | VisionSq: " << (bBoid.visionDistance * bBoid.visionDistance) << "\n";
 			//}
+
+
+			//putting a cap on neighbours for handling cases of large visual distance and high cohesion that is multiple boids swarming around same local poistion
+			if (neighbours >= 30)	break; 
 
 			//if within visual range
 			if (dist < (m_visionDistance * m_visionDistance))
@@ -819,18 +874,23 @@ void Game::sFlocking()
 		
 		Vec2 totalForce = (seperation * m_seperationValue) + (alignment * m_alignmentValue) + (cohesion * m_cohesionValue);
 
+		auto& mesh = b->get<CMesh>();
+
 		//coloring boids based on neighbour count
-		if (neighbours <= 0)
+		if (neighbours >= 10 )
 		{
-			b->get<CShape>().polygon.setFillColor(sf::Color::White);	
+			///b->get<CShape>().polygon.setFillColor(sf::Color::White);	
+			mesh.color = sf::Color::Cyan;
 		}
-		else if (neighbours <= 10)
+		else if (neighbours >=  5)
 		{
-			b->get<CShape>().polygon.setFillColor(sf::Color::Green);
+			///b->get<CShape>().polygon.setFillColor(sf::Color::Green);
+			mesh.color = sf::Color::Yellow;
 		}
-		else
+		else 
 		{
-			b->get<CShape>().polygon.setFillColor(sf::Color::Cyan);
+			mesh.color = sf::Color::White;
+			///b->get<CShape>().polygon.setFillColor(sf::Color::Cyan);
 		}
 
 		//apply to velocity
@@ -917,8 +977,7 @@ void Game::spawnEnemy()
 	///*if ((mx < m_player->cTransform->pos.x - m_player->cShape->circle.getRadius() && mx > m_player->cTransform->pos.x + m_player->cShape->circle.getRadius()) || (my < m_player->cTransform->pos.y - m_player->cShape->circle.getRadius() && my > m_player->cTransform->pos.y + m_player->cShape->circle.getRadius()))*/
 	//
 	////enemy->cTransform = std::make_shared<CTransform>(Vec2(mx, my), Vec2(sx, sy), 0);
-	//enemy->add<CTransform>(Vec2(mx, my), Vec2(sx, sy), 0);
-	//
+		//
 
 	////record when the most recent enemy was spawned
 	//m_lastEnemySpawnTime = m_currentFrame;
@@ -992,19 +1051,24 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& target)
 void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 {
 	//TODO : implement your own special weapon
-}
+}//enemy->add<CTransform>(Vec2(mx, my), Vec2(sx, sy), 0);
+
 
 void Game::spawnBoid()
 {
 	auto boid = m_entities.addEntity("Boid");
 	//boid->add<CShape>(10, 3, sf::Color::White, sf::Color::White, 0);
-	boid->add<CShape>();
+	///boid->add<CShape>();
+
+	boid->add<CMesh>();
 
 	boid->add<CBoid>(); 
 
 	//float r = boid->get<CShape>().circle.getRadius();
-	float x = boid->get<CShape>().polygon.getLocalBounds().width;
-	float y = boid->get<CShape>().polygon.getLocalBounds().height;
+	///float x = boid->get<CShape>().polygon.getLocalBounds().width;
+	///float y = boid->get<CShape>().polygon.getLocalBounds().height;
+	float x = boid->get<CMesh>().size;
+	float y = boid->get<CMesh>().width;
 
 	int mx = x + (rand() % (size_t)(1 + (m_window.getSize().x - x) - x));
 	int my = y + (rand() % (size_t)(1 + (m_window.getSize().y - y) - y));
@@ -1043,7 +1107,7 @@ void Game::drawGrid()
 	int vertexIndex = 0;
 	sf::Color gridColor = sf::Color(125, 125, 125);
 
-	//vertical lines
+	//vertical debugVelocityLines
 	for (int i = 0; i <= cols; i++)
 	{
 		int x = i * m_grid.cellsize();
@@ -1059,7 +1123,7 @@ void Game::drawGrid()
 		vertexIndex++;
 	}
 
-	//horizontal lines
+	//horizontal debugVelocityLines
 	for (int j = 0; j <= rows; j++)
 	{
 		int y = j * m_grid.cellsize();

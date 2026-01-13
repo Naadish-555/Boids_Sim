@@ -25,3 +25,14 @@ void Entity::destroy()
 {
 	m_active = false;
 }
+
+sf::FloatRect Entity::getBounds(const Vec2& pos, float size)
+{
+	// Return a square centered on the boid
+	return sf::FloatRect(
+		pos.x - size, // Left
+		pos.y - size, // Top
+		size * 2,     // Width
+		size * 2      // Height
+	);
+}

@@ -21,6 +21,16 @@ public:
 		:pos(p), velocity(v), angle(a) {}
 };
 
+
+class CMesh : public Component
+{
+public:
+	float size = 10.0f;						//length of boid
+	float width = 7.0f;						//width of rear
+
+	sf::Color color = sf::Color::White;
+};
+
 class CShape : public Component
 {
 public:

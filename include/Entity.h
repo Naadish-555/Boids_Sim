@@ -7,6 +7,7 @@
 
 using ComponentTuple = std::tuple<
 	CTransform,
+	CMesh,
 	CShape,
 	CCollision,
 	CInput,
@@ -78,5 +79,6 @@ public:
 	const size_t id() const;
 	void destroy();
 
+	sf::FloatRect getBounds(const Vec2& pos, float size);
 	
 };
