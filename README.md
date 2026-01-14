@@ -39,24 +39,36 @@ Target performance metrics for the optimization phase:
 6.  Press **Ctrl + F5** to build and run.
 
 ### 2. macOS & Linux (Command Line)
-1.  Open a terminal in the project directory.
-2.  Create a build folder:
-    ```bash
-    mkdir build && cd build
-    ```
-3.  Configure with CMake (Ensure Release mode for performance):
-    ```bash
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    ```
-4.  Build the project:
-    ```bash
-    make
-    ```
-5.  Run the executable:
-    ```bash
-    ./bin/mygame   # (Location may vary based on configuration)
-    ```
 
+**Prerequisites:**
+You do NOT need to install SFML manually (it is included in this project). 
+However, you need the system tools (compilers and dependencies) to build it from source.
+
+- Ubuntu/Debian:
+  sudo apt update
+  sudo apt install cmake build-essential libxrandr-dev libxcursor-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libfreetype6-dev
+
+- Fedora:
+  sudo dnf install cmake make gcc-c++ systemd-devel libX11-devel libXrandr-devel libXcursor-devel libXi-devel libXinerama-devel mesa-libGL-devel alsa-lib-devel
+
+- macOS:
+  brew install cmake
+
+**Build Steps:**
+
+1. Open a terminal in the project directory.
+
+2. Create a build folder:
+   mkdir build && cd build
+
+3. Configure with CMake (Release mode is critical for simulation performance):
+   cmake -DCMAKE_BUILD_TYPE=Release ..
+
+4. Build the project:
+   make
+
+5. Run the executable:
+   ./Boids_Sim
 
 ## Credits
 * **Template:** SFMLCmakeSetup by [Meemknight](https://github.com/meemknight).
