@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Components.h"
+#include "Components.hpp"
 #include <memory>
 #include <string>
 #include <tuple>
@@ -8,7 +8,7 @@
 using ComponentTuple = std::tuple<
 	CTransform,
 	CMesh,
-	CShape,
+	//CShape,
 	CCollision,
 	CInput,
 	CScore,
@@ -27,18 +27,14 @@ class Entity
 	
 
 	//constructor and destructor
-	Entity(const size_t id, const std::string& tag);
+	Entity(const size_t id, const std::string& tag)
+		:m_id(id)
+		, m_tag(tag)
+	{
+	}
 
 
 public:
-
-	//component pointers
-	/*std::shared_ptr<CTransform>	 cTransform;
-	std::shared_ptr<CShape>		 cShape;
-	std::shared_ptr<CCollision>	 cCollision;
-	std::shared_ptr<CInput>		 cInput;
-	std::shared_ptr<CScore>		 cScore;
-	std::shared_ptr<CLifespan>	 cLifespan;*/
 
 	template <typename T>
 	bool has()	const
@@ -74,11 +70,37 @@ public:
 	}
 
 	//member access functions
-	bool isActive() const;
-	const std::string& tag() const;
-	const size_t id() const;
-	void destroy();
 
-	sf::FloatRect getBounds(const Vec2& pos, float size);
+	bool isActive() const
+	{
+		return m_active;
+	}
+
+	const std::string& tag() const
+	{
+		return m_tag;
+	}
+
+	const size_t id() const
+	{
+		return m_id;
+	}
+
+	void destroy()
+	{
+		m_active = false;
+	}
+
+	sf::FloatRect getBounds(const Vec2& pos, float size)
+	{
+		// Return a square centered on the boid
+		return sf::FloatRect(
+			pos.x - size, // Left
+			pos.y - size, // Top
+			size * 2,     // Width
+			size * 2      // Height
+		);
+	}
+
 	
 };
