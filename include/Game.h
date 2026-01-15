@@ -41,7 +41,7 @@ class Game
 	float				m_avoidDistance		= 15.0f;
 	float				m_maxBoidSpeed		= 3.0f;
 	float				m_minBoidSpeed		= 0.1f;
-	float				m_steeringStrength	= 0.05f;
+	float				m_steeringStrength	= 0.01f;
 
 	bool				m_drawDebugLines = false;
 	bool				m_drawBoids = true;

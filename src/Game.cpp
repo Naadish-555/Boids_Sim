@@ -410,7 +410,7 @@ void Game::sGUI()
 	float oldVisionDistance = m_visionDistance;
 
 	ImGui::Begin("Flocking controls");
-	ImGui::SliderFloat("Max speed", &m_maxBoidSpeed, 0.0f, 5.0f);
+	ImGui::SliderFloat("Max speed", &m_maxBoidSpeed, m_minBoidSpeed, 5.0f);
 	ImGui::SliderFloat("Steering Strength", &m_steeringStrength, 0.001f, 0.10f);
 	ImGui::SliderFloat("Avoid Radius", &m_avoidDistance, 10.0f, 30.0f);
 	ImGui::SliderFloat("Vision Radius", &m_visionDistance, 10.0f, 65.0f);
@@ -622,9 +622,9 @@ void Game::spawnBoid()
 	float sx = (static_cast<float>(rand()) / RAND_MAX) * (m_maxBoidSpeed - m_minBoidSpeed) + (m_minBoidSpeed); //random float number generation between max and min value
 	float sy = (static_cast<float>(rand()) / RAND_MAX) * (m_maxBoidSpeed - m_minBoidSpeed) + (m_minBoidSpeed);
 
-	int sAngle = (static_cast<float>(rand()) / RAND_MAX) * 360;
+	float sAngle = (rand() % 360) * (3.14159f / 180.0f);;
 
-	boid->add<CTransform>(Vec2(mx, my), Vec2(sx, sy), sAngle);
+	boid->add<CTransform>(Vec2(mx, my), Vec2(sx * cos(sAngle), sy * sin(sAngle)), sAngle);
 
 	m_lastBoidSpawnTime = m_currentFrame;
 
