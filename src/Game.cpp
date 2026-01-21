@@ -101,6 +101,7 @@ void Game::run()
 	m_grid.init(m_window.getSize().x, m_window.getSize().y, cellsize);
 	drawGrid();
 	
+	spawnPredator();
 	sBoidSpawner(m_boidsToSpawn);
 	while (m_running)
 	{
@@ -121,7 +122,7 @@ void Game::run()
 		{
 			sFlocking(); 
 			sCollision();
-			sMovement();
+			sMovement(deltaTimeSeconds);
 		}
 
 		sUserInput();
@@ -145,12 +146,41 @@ std::shared_ptr<Entity> Game::player()
 	return players.front();
 }
 
-void Game::sMovement()
+void Game::sMovement(float dt)
 {
+	float deltaTime = dt * 60.0f;	//at 60 fps dt = 1.0f, at 30 fps dt = 2.0f
+
+
+	auto& predators = m_entities.getEntities("Predator");
+	if (!predators.empty())
+	{
+		auto& predatorTf = predators[0]->get<CTransform>();
+
+		 m_predatorTimeAccumulator += dt * m_predatorSpeed;
+
+		 //lerping for change in loop radius
+		 float smoothSpeed = 1.5f;
+		 m_predatorCurrentLoopRadius += (m_predatorDesiredLoopRadius - m_predatorCurrentLoopRadius) * smoothSpeed * dt;
+
+		 float screenCentreX = m_window.getSize().x / 2.0f;
+		 float screenCentreY = m_window.getSize().y / 2.0f;
+
+		 //Lissajous Curve , m_predatorLoopTraverseMode = 1 => circle, 2=> infitity shape loop, 3 => spiral shape
+		 float nextX = screenCentreX + (std::cos(m_predatorTimeAccumulator) * (2.0f * m_predatorCurrentLoopRadius));
+		 float nextY = screenCentreY + (std::sin(m_predatorTimeAccumulator * m_predatorLoopTraverseMode) * m_predatorCurrentLoopRadius);
+		 Vec2 nextPos(nextX, nextY);
+
+		 Vec2 currentVel = nextPos - predatorTf.pos;
+		
+		 predatorTf.velocity = currentVel;
+
+		 predatorTf.pos = nextPos;
+	}
+
 	
 	for (auto& e : m_entities.getEntities())
 	{
-		
+		if (e->tag() == "Predator")	continue;
 		auto& transform = e->get<CTransform>();
 		
 		//auto& shape = e->get<CShape>().polygon;
@@ -163,7 +193,7 @@ void Game::sMovement()
 		//shape.setRotation(angle);
 
 
-		transform.pos += transform.velocity;
+		transform.pos += transform.velocity * deltaTime;
 
 
 	}
@@ -238,11 +268,11 @@ void Game::sUserInput()
 void Game::sRender()
 {
 	//TODO : change the code below to draw all of the entities in case of multiple species 
-	m_window.clear();
+	m_window.clear(sf::Color(25,25,25));
 
-
+	//Boids
 	auto& boids = m_entities.getEntities("Boid");
-	sf::VertexArray va(sf::Triangles, boids.size() * 3);
+	sf::VertexArray vaBoids(sf::Triangles, boids.size() * 3);
 
 	for (size_t i = 0; i < boids.size(); i++)
 	{
@@ -274,24 +304,79 @@ void Game::sRender()
 		size_t idx = i * 3;
 
 		// Vertex 1 (Nose)
-		va[idx + 0].position = sf::Vector2f(v1.x, v1.y);
-		va[idx + 0].color = mesh.color;
+		vaBoids[idx + 0].position = sf::Vector2f(v1.x, v1.y);
+		vaBoids[idx + 0].color = mesh.color;
 
 		// Vertex 2 (Rear Left)
-		va[idx + 1].position = sf::Vector2f(v2.x, v2.y);
-		va[idx + 1].color = mesh.color;
+		vaBoids[idx + 1].position = sf::Vector2f(v2.x, v2.y);
+		vaBoids[idx + 1].color = mesh.color;
 
 		// Vertex 3 (Rear Right)
-		va[idx + 2].position = sf::Vector2f(v3.x, v3.y);
-		va[idx + 2].color = mesh.color;
+		vaBoids[idx + 2].position = sf::Vector2f(v3.x, v3.y);
+		vaBoids[idx + 2].color = mesh.color;
 
+
+	}
+
+
+	//Predators
+	auto& predators = m_entities.getEntities("Predator");
+	sf::VertexArray vaPred(sf::Triangles, predators.size() * 3);
+	for (size_t i = 0; i < predators.size(); i++)
+	{
+		auto& p = predators[i];
+			
+
+		auto& pos = p->get<CTransform>().pos;
+		auto& vel = p->get<CTransform>().velocity;
+		auto& mesh = p->get<CMesh>();
+
+		if (m_PredatorActive)
+			mesh.color = sf::Color::Red;
+		else
+			mesh.color = sf::Color(119, 136, 193);
+
+
+		//calculating direction vector for predator rotation
+		float len = vel.magnitude();
+
+		Vec2 dir(0.0f, -1.0f); //default facing up
+
+		dir = { vel.x / len, vel.y / len };
+
+		//Calculate Perpendicular Vector(Side Vector) in 2D, perpendicular to (x, y) is (-y, x)
+		Vec2 perp(-dir.y, dir.x);
+
+		// Nose: Forward from center
+		Vec2 v1 = pos + (dir * mesh.size);
+
+		// Rear Left: Behind center, then shifted Left
+		Vec2 v2 = pos - (dir * mesh.size) + (perp * mesh.width);
+
+		// Rear Right: Behind center, then shifted Right
+		Vec2 v3 = pos - (dir * mesh.size) - (perp * mesh.width);
+
+		size_t idx = i * 3;
+
+		// Vertex 1 (Nose)
+		vaPred[idx + 0].position = sf::Vector2f(v1.x, v1.y);
+		vaPred[idx + 0].color = mesh.color;
+
+		// Vertex 2 (Rear Left)
+		vaPred[idx + 1].position = sf::Vector2f(v2.x, v2.y);
+		vaPred[idx + 1].color = mesh.color;
+
+		// Vertex 3 (Rear Right)
+		vaPred[idx + 2].position = sf::Vector2f(v3.x, v3.y);
+		vaPred[idx + 2].color = mesh.color;
 
 	}
 
 	if (m_drawBoids)
 	{
 		///m_window.draw(e->get<CShape>().polygon);
-		m_window.draw(va);
+		m_window.draw(vaPred);
+		m_window.draw(vaBoids);
 	}
 
 	
@@ -360,7 +445,7 @@ void Game::sCollision()
 	{
 		
 		//screen wrapping
-		if (e->tag() == "Boid")
+		if (e->has<CBoid>() || e->tag() == "Predator")
 		{
 			//auto& shape = e->get<CShape>();
 			auto& transform = e->get<CTransform>();
@@ -409,7 +494,10 @@ void Game::sGUI()
 
 	float oldVisionDistance = m_visionDistance;
 
-	ImGui::Begin("Flocking controls");
+	ImGui::Begin("Simulation controls");
+
+
+	ImGui::SeparatorText("Boid parameters");
 	ImGui::SliderFloat("Max speed", &m_maxBoidSpeed, m_minBoidSpeed, 5.0f);
 	ImGui::SliderFloat("Steering Strength", &m_steeringStrength, 0.001f, 0.10f);
 	ImGui::SliderFloat("Avoid Radius", &m_avoidDistance, 10.0f, 30.0f);
@@ -422,11 +510,25 @@ void Game::sGUI()
 	}
 
 	
-	ImGui::Separator();
-
+	ImGui::SeparatorText("Flocking parameters");
 	ImGui::SliderFloat("Separation", &m_seperationValue, 0.0f, 2.0f);
 	ImGui::SliderFloat("Alignment", &m_alignmentValue, 0.0f, 2.0f);
 	ImGui::SliderFloat("Cohesion", &m_cohesionValue, 0.0f, 2.0f);
+	
+	ImGui::SeparatorText("Predator parameters");
+	ImGui::Checkbox("Predator Active", &m_PredatorActive);
+	ImGui::SliderFloat("Predator Speed", &m_predatorSpeed, 0.1f, 1.0f);
+	ImGui::SliderFloat("Loop Radius", &m_predatorDesiredLoopRadius, 1.0f, 450.0f);
+	//predator traverse mode 
+	int currentItem = m_predatorLoopTraverseMode - 1;
+	if (ImGui::Combo("Movement Pattern", &currentItem, m_predatorTraverseList, IM_ARRAYSIZE(m_predatorTraverseList)))
+	{
+		m_predatorLoopTraverseMode = currentItem + 1;
+	}
+
+	ImGui::SliderFloat("Fear Radius", &m_fearRadius, 0.0f, 300.0f);
+	ImGui::SliderFloat("Fear Strength", &m_fearStrength, 0.0f, 10.0f);
+
 	
 	ImGui::SeparatorText("Debug options");
 	ImGui::Checkbox("Draw debug velocity", &m_drawDebugLines);
@@ -457,6 +559,8 @@ void Game::sFlocking()
 {
 	//get all boid entities
 	auto& boids = m_entities.getEntities("Boid");
+	auto& predators = m_entities.getEntities("Predator");
+
 
 	//std::cout << "Boid Count: " << boids.size() << "\n";
 	//rebuild the grid every frame 
@@ -465,6 +569,16 @@ void Game::sFlocking()
 
 	m_boidsTfCache.reserve(boids.size());
 	m_neighbourCache.reserve(m_maxNeighbours + 20);
+
+	//Predator
+
+	Vec2 predatorPos;
+	if(!predators.empty() && m_PredatorActive)
+	{
+		predatorPos = predators[0]->get<CTransform>().pos;
+	}
+
+
 
 	//loop through boids to populate the grid
 	for (int i = 0; i < boids.size(); i++)
@@ -490,12 +604,32 @@ void Game::sFlocking()
 		Vec2 seperation(0, 0);
 		Vec2 alignment(0, 0);
 		Vec2 cohesion(0, 0);
+		Vec2 fleeDxn(0, 0);
 
 		int neighbours = 0;
 
 		auto& bVel = b->get<CTransform>().velocity;			//since we want to update it directly so getting from m_entities
 		auto& bPos = m_boidsTfCache[i].pos;
 		auto& bBoid = b->get<CBoid>();
+
+		//Flee logic
+		if (m_PredatorActive)
+		{
+			auto vecToBoid = bPos - predatorPos;
+			float vecToBoidDistSq = vecToBoid.x * vecToBoid.x + vecToBoid.y * vecToBoid.y;
+			if (vecToBoidDistSq < m_fearRadius * m_fearRadius)
+			{
+				float vecToBoidDist = std::sqrtf(vecToBoidDistSq);
+
+				auto dir = vecToBoid / vecToBoidDist;
+
+				//ramping strength, near predator 0 , at fearRadius 1
+				auto ramp = 1.0f - (vecToBoidDist / m_fearRadius);
+
+				fleeDxn = dir * (ramp * (m_fearStrength * 10 ));
+			}
+		}
+
 
 		//get all nearby boids
 		m_grid.getNearby(bPos.x, bPos.y, m_neighbourCache);
@@ -519,7 +653,7 @@ void Game::sFlocking()
 			//	std::cout << "DistSq: " << distsq << " | VisionSq: " << (bBoid.visionDistance * bBoid.visionDistance) << "\n";
 			//}
 
-
+			
 			//putting a cap on neighbours for handling cases of large visual distance and high cohesion that is multiple boids swarming around same local poistion
 			if (neighbours >= m_maxNeighbours)	break; 
 
@@ -539,6 +673,9 @@ void Game::sFlocking()
 					seperation += diff / (distSq + 0.1f); //closer they are stronger the push , adding 0.1f to ensure denominator is never zero
 				}
 			}
+
+
+			
 		}
 
 		//average and normalize the forces
@@ -561,7 +698,7 @@ void Game::sFlocking()
 
 		
 		
-		Vec2 totalForce = (seperation * m_seperationValue) + (alignment * m_alignmentValue) + (cohesion * m_cohesionValue);
+		Vec2 totalForce = (seperation * m_seperationValue) + (alignment * m_alignmentValue) + (cohesion * m_cohesionValue) + fleeDxn;
 
 		auto& mesh = b->get<CMesh>();
 
@@ -632,12 +769,19 @@ void Game::spawnBoid()
 
 void Game::resetSimultaion()
 {
-	auto& boids = m_entities.getEntities("Boid");
+	/*auto& boids = m_entities.getEntities("Boid");
 	for (auto& b : boids)
 	{
 		b->destroy();
+	}*/
+
+	for (auto& e : m_entities.getEntities())
+	{
+		if (e->has<CBoid>() || e->tag() == "Predator")
+			e->destroy();
 	}
 
+	spawnPredator();
 	sBoidSpawner(m_boidsToSpawn);
 }
 
@@ -683,4 +827,25 @@ void Game::drawGrid()
 		m_gridLines[vertexIndex].color = gridColor;
 		vertexIndex++;
 	}
+}
+
+void Game::spawnPredator()
+{
+	m_predatorTimeAccumulator = 0;
+	auto boid = m_entities.addEntity("Predator");
+	//boid->add<CShape>(10, 3, sf::Color::White, sf::Color::White, 0);
+	///boid->add<CShape>();
+
+	boid->add<CMesh>(20, 15, sf::Color::Red);
+
+	//float r = boid->get<CShape>().circle.getRadius();
+	///float x = boid->get<CShape>().polygon.getLocalBounds().width;
+	///float y = boid->get<CShape>().polygon.getLocalBounds().height;
+	float mx = m_window.getSize().x / 2;
+	float my = m_window.getSize().y / 2;
+
+
+	boid->add<CTransform>(Vec2(mx,my), Vec2(0.1f,0.1f), 0.0f);
+
+
 }

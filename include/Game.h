@@ -53,12 +53,27 @@ class Game
 	std::vector<int>			m_neighbourCache;		
 
 
+	//Predator specific vars
+
+	int					m_predatorLoopTraverseMode = 2;
+
+	float				m_predatorTimeAccumulator = 0.0f;
+	float				m_fearRadius	= 150.0f;
+	float				m_fearStrength	= 3.0f;
+	float				m_predatorDesiredLoopRadius = 150.0f;
+	float				m_predatorCurrentLoopRadius = 150.0f;
+	float				m_predatorSpeed = 0.5f;
+
+	bool				m_PredatorActive = false;
+
+	const char*			m_predatorTraverseList[3] = { "Oval", "Figure-8 Loop", "Spiral" };
+
 	void init(const std::string& config);				//intializing game state with a config file path
 	void setPaused(bool paused);						//pause the game
 
 	std::shared_ptr<Entity> player();
 
-	void sMovement();									//System : Entity position / movement update
+	void sMovement(float dt);									//System : Entity position / movement update
 	void sUserInput();									//System : User Input
 	void sRender();										//System : Render / Drawing
 	void sCollision();									//System : Collisions
@@ -75,6 +90,8 @@ class Game
 	void spawnBoid();
 	void resetSimultaion();
 	void drawGrid();
+
+	void spawnPredator();
 
 
 

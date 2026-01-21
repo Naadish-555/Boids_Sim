@@ -29,6 +29,11 @@ public:
 	float width = 7.0f;						//width of rear
 
 	sf::Color color = sf::Color::White;
+
+	CMesh() = default;
+
+	CMesh(float s, float w, sf::Color c)
+		:size(s), width(w), color(c) {}
 };
 
 class CShape : public Component
