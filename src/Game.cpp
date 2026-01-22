@@ -156,25 +156,29 @@ void Game::sMovement(float dt)
 	{
 		auto& predatorTf = predators[0]->get<CTransform>();
 
-		 m_predatorTimeAccumulator += dt * m_predatorSpeed;
+		float safeRadius = std::max(m_predatorCurrentLoopRadius, 1.0f);
 
-		 //lerping for change in loop radius
-		 float smoothSpeed = 1.5f;
-		 m_predatorCurrentLoopRadius += (m_predatorDesiredLoopRadius - m_predatorCurrentLoopRadius) * smoothSpeed * dt;
+		float angularSpeed = m_predatorSpeed / safeRadius;
 
-		 float screenCentreX = m_window.getSize().x / 2.0f;
-		 float screenCentreY = m_window.getSize().y / 2.0f;
+		m_predatorTimeAccumulator += dt * angularSpeed;
 
-		 //Lissajous Curve , m_predatorLoopTraverseMode = 1 => circle, 2=> infitity shape loop, 3 => spiral shape
-		 float nextX = screenCentreX + (std::cos(m_predatorTimeAccumulator) * (2.0f * m_predatorCurrentLoopRadius));
-		 float nextY = screenCentreY + (std::sin(m_predatorTimeAccumulator * m_predatorLoopTraverseMode) * m_predatorCurrentLoopRadius);
-		 Vec2 nextPos(nextX, nextY);
+		//lerping for change in loop radius
+		float smoothSpeed = 1.5f;
+		m_predatorCurrentLoopRadius += (m_predatorDesiredLoopRadius - m_predatorCurrentLoopRadius) * smoothSpeed * dt;
 
-		 Vec2 currentVel = nextPos - predatorTf.pos;
+		float screenCentreX = m_window.getSize().x / 2.0f;
+		float screenCentreY = m_window.getSize().y / 2.0f;
+
+		//Lissajous Curve , m_predatorLoopTraverseMode = 1 => circle, 2=> infitity shape loop, 3 => spiral shape
+		float nextX = screenCentreX + (std::cos(m_predatorTimeAccumulator) * (2.0f * m_predatorCurrentLoopRadius));
+		float nextY = screenCentreY + (std::sin(m_predatorTimeAccumulator * m_predatorLoopTraverseMode) * m_predatorCurrentLoopRadius);
+		Vec2 nextPos(nextX, nextY);
+
+		Vec2 currentVel = nextPos - predatorTf.pos;
 		
-		 predatorTf.velocity = currentVel;
+		predatorTf.velocity = currentVel;
 
-		 predatorTf.pos = nextPos;
+		predatorTf.pos = nextPos;
 	}
 
 	
@@ -390,15 +394,18 @@ void Game::sRender()
 	{
 		sf::VertexArray debugVelocityLines(sf::Lines);
 
-		for (auto& e : boids)
+		for (auto& e : m_entities.getEntities())
 		{
-			auto& pos = e->get<CTransform>().pos;
-			auto& vel = e->get<CTransform>().velocity;
-				
-			debugVelocityLines.append(sf::Vertex(sf::Vector2f(pos.x,pos.y), sf::Color::Red)); //start of line
+			if(e->has<CBoid>() || e->tag() == "Predator")
+			{
+				auto& pos = e->get<CTransform>().pos;
+				auto& vel = e->get<CTransform>().velocity;
 
-			Vec2 endPos = pos + (vel * 20.0f);
-			debugVelocityLines.append(sf::Vertex(sf::Vector2f(endPos.x, endPos.y), sf::Color::Red)); //end of line
+				debugVelocityLines.append(sf::Vertex(sf::Vector2f(pos.x, pos.y), sf::Color::Magenta)); //start of line
+
+				Vec2 endPos = pos + (vel * 20.0f);
+				debugVelocityLines.append(sf::Vertex(sf::Vector2f(endPos.x, endPos.y), sf::Color::Magenta)); //end of line
+			}
 		}
 
 		m_window.draw(debugVelocityLines);
@@ -520,8 +527,8 @@ void Game::sGUI()
 	
 	ImGui::SeparatorText("Predator parameters");
 	ImGui::Checkbox("Predator Active", &m_predatorActive);
-	ImGui::SliderFloat("Predator Speed", &m_predatorSpeed, 0.1f, 1.0f);
-	ImGui::SliderFloat("Loop Radius", &m_predatorDesiredLoopRadius, 1.0f, 450.0f);
+	ImGui::SliderFloat("Predator Speed", &m_predatorSpeed, 50.0f, 250.0f);
+	ImGui::SliderFloat("Loop Radius", &m_predatorDesiredLoopRadius, 25.0f, 450.0f);
 	//predator traverse mode 
 	int currentItem = m_predatorLoopTraverseMode - 1;
 	if (ImGui::Combo("Movement Pattern", &currentItem, m_predatorTraverseList, IM_ARRAYSIZE(m_predatorTraverseList)))

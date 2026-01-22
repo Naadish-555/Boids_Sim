@@ -58,12 +58,12 @@ class Game
 	int					m_predatorLoopTraverseMode = 2;
 
 	float				m_predatorTimeAccumulator = 0.0f;
-	float				m_predatorFOV   = 200.0f;
+	float				m_predatorFOV   = 150.0f;
 	float				m_fearRadius	= 150.0f;
 	float				m_fearStrength	= 3.0f;
 	float				m_predatorDesiredLoopRadius = 150.0f;
 	float				m_predatorCurrentLoopRadius = 150.0f;
-	float				m_predatorSpeed = 0.5f;
+	float				m_predatorSpeed = 150.0f;
 
 	bool				m_predatorActive = false;
 	bool				m_drawPredator = true;
@@ -75,7 +75,7 @@ class Game
 
 	std::shared_ptr<Entity> player();
 
-	void sMovement(float dt);									//System : Entity position / movement update
+	void sMovement(float dt);							//System : Entity position / movement update
 	void sUserInput();									//System : User Input
 	void sRender();										//System : Render / Drawing
 	void sCollision();									//System : Collisions
