@@ -116,5 +116,10 @@ public :
 		return *this;
 	}
 
+	float dot(const Vec2& rhs)
+	{
+		return x * rhs.x + y * rhs.y;
+	}
+
 
 };

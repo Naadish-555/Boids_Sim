@@ -58,13 +58,15 @@ class Game
 	int					m_predatorLoopTraverseMode = 2;
 
 	float				m_predatorTimeAccumulator = 0.0f;
+	float				m_predatorFOV   = 200.0f;
 	float				m_fearRadius	= 150.0f;
 	float				m_fearStrength	= 3.0f;
 	float				m_predatorDesiredLoopRadius = 150.0f;
 	float				m_predatorCurrentLoopRadius = 150.0f;
 	float				m_predatorSpeed = 0.5f;
 
-	bool				m_PredatorActive = false;
+	bool				m_predatorActive = false;
+	bool				m_drawPredator = true;
 
 	const char*			m_predatorTraverseList[3] = { "Oval", "Figure-8 Loop", "Spiral" };
 

@@ -331,7 +331,7 @@ void Game::sRender()
 		auto& vel = p->get<CTransform>().velocity;
 		auto& mesh = p->get<CMesh>();
 
-		if (m_PredatorActive)
+		if (m_predatorActive)
 			mesh.color = sf::Color::Red;
 		else
 			mesh.color = sf::Color(119, 136, 193);
@@ -375,8 +375,11 @@ void Game::sRender()
 	if (m_drawBoids)
 	{
 		///m_window.draw(e->get<CShape>().polygon);
-		m_window.draw(vaPred);
 		m_window.draw(vaBoids);
+	}
+	if (m_drawPredator)
+	{
+		m_window.draw(vaPred);
 	}
 
 	
@@ -516,7 +519,7 @@ void Game::sGUI()
 	ImGui::SliderFloat("Cohesion", &m_cohesionValue, 0.0f, 2.0f);
 	
 	ImGui::SeparatorText("Predator parameters");
-	ImGui::Checkbox("Predator Active", &m_PredatorActive);
+	ImGui::Checkbox("Predator Active", &m_predatorActive);
 	ImGui::SliderFloat("Predator Speed", &m_predatorSpeed, 0.1f, 1.0f);
 	ImGui::SliderFloat("Loop Radius", &m_predatorDesiredLoopRadius, 1.0f, 450.0f);
 	//predator traverse mode 
@@ -528,12 +531,14 @@ void Game::sGUI()
 
 	ImGui::SliderFloat("Fear Radius", &m_fearRadius, 0.0f, 300.0f);
 	ImGui::SliderFloat("Fear Strength", &m_fearStrength, 0.0f, 10.0f);
+	ImGui::SliderFloat("Predator FOV", &m_predatorFOV, 0.1f, 360.0f);
 
 	
 	ImGui::SeparatorText("Debug options");
 	ImGui::Checkbox("Draw debug velocity", &m_drawDebugLines);
 	ImGui::Checkbox("Draw grid lines", &m_drawGrid);
 	ImGui::Checkbox("Draw boids", &m_drawBoids);
+	ImGui::Checkbox("Draw predator", &m_drawPredator);
 	
 	ImGui::Separator();
 	ImGui::SliderInt("Boids to spawn", &m_boidsToSpawn, 1, 10000);
@@ -572,12 +577,13 @@ void Game::sFlocking()
 
 	//Predator
 
-	Vec2 predatorPos;
-	if(!predators.empty() && m_PredatorActive)
+	CTransform predatorTf;
+	if(!predators.empty() && m_predatorActive)
 	{
-		predatorPos = predators[0]->get<CTransform>().pos;
+		predatorTf = predators[0]->get<CTransform>();
 	}
 
+	float predatorFOVThreshold = std::cos((m_predatorFOV / 2.0f) * 3.14159f / 180.0f);
 
 
 	//loop through boids to populate the grid
@@ -613,22 +619,30 @@ void Game::sFlocking()
 		auto& bBoid = b->get<CBoid>();
 
 		//Flee logic
-		if (m_PredatorActive)
+		if (m_predatorActive)
 		{
-			auto vecToBoid = bPos - predatorPos;
+			auto vecToBoid = bPos - predatorTf.pos;
 			float vecToBoidDistSq = vecToBoid.x * vecToBoid.x + vecToBoid.y * vecToBoid.y;
 			if (vecToBoidDistSq < m_fearRadius * m_fearRadius)
 			{
 				float vecToBoidDist = std::sqrtf(vecToBoidDistSq);
 
-				auto dir = vecToBoid / vecToBoidDist;
+				auto dirToBoid = vecToBoid / vecToBoidDist;
+				Vec2 fwd = predatorTf.velocity.normalize();
 
-				//ramping strength, near predator 0 , at fearRadius 1
-				auto ramp = 1.0f - (vecToBoidDist / m_fearRadius);
+				float viewAngle = fwd.dot(dirToBoid);
 
-				fleeDxn = dir * (ramp * (m_fearStrength * 10 ));
+				if (viewAngle >= predatorFOVThreshold)
+				{
+					//ramping strength, near predator 0 , at fearRadius 1
+					auto ramp = 1.0f - (vecToBoidDist / m_fearRadius);
+					fleeDxn = dirToBoid * (ramp * (m_fearStrength * 10 ));
+
+				}
+
 			}
 		}
+
 
 
 		//get all nearby boids
@@ -645,8 +659,8 @@ void Game::sFlocking()
 			auto& oPos = m_boidsTfCache[index].pos;
 			auto& oVel = m_boidsTfCache[index].velocity;
 			
-
-			float distSq = bPos.distsq(oPos);
+			Vec2 diff = oPos - bPos;
+			float distSq = diff.x * diff.x + diff.y * diff.y;
 
 			//if (b->id() == 1) // Only print for the first boid (to avoid console spam)
 			//{
@@ -660,6 +674,7 @@ void Game::sFlocking()
 			//if within visual range
 			if (distSq < (m_visionDistance * m_visionDistance))
 			{
+				
 				neighbours++;
 
 				alignment += oVel; //accumulate neighbour velocities
@@ -669,13 +684,12 @@ void Game::sFlocking()
 				//seperation
 				if (distSq < (m_avoidDistance * m_avoidDistance))
 				{
-					Vec2 diff = bPos - oPos;
-					seperation += diff / (distSq + 0.1f); //closer they are stronger the push , adding 0.1f to ensure denominator is never zero
+					seperation -= diff / (distSq + 0.1f); 
+					//closer they are stronger the push , adding 0.1f to ensure denominator is never zero
 				}
+
 			}
 
-
-			
 		}
 
 		//average and normalize the forces
