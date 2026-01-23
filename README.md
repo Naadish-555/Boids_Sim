@@ -6,15 +6,15 @@
 > A high-performance C++ implementation of Craig Reynolds' Flocking Algorithm, currently optimized with spatial partitioning.
 
 ## Overview
-This project explores Emergent Behavior and Optimization Algorithms in game development. It implements the classic "Boids" rules (Alignment, Cohesion, Separation) using SFML for rendering.
+This project explores Emergent Behavior and Optimization Algorithms in game development. It implements the classic "Boids" rules (Alignment, Cohesion, Separation) alongside a predator that demonstrates fleeing behaviour of boids, using SFML for rendering.
 
-* **Objective:** To optimize the simulation from a naive $O(N^2)$ approach to a scalable solution capable of handling 10,000+ agents at 60 FPS.
 
 ## Key Features
 Core Boids Logic: Complete implementation of Alignment, Cohesion, and Separation forces.
 Spatial Optimization: Custom Uniform Grid (Spatial Hashing) to reduce neighbor search complexity to approx $O(1)$.
 Batch Rendering: Replaced standard OOP rendering with Vertex Arrays to reduce draw calls from $N$ to 1 per frame.
 ImGui Integration: Real-time parameter tuning for velocity, grid, and debugging visualization.
+Predator-Prey Dynamics: Introduced "Predator" agent with parametric movement patterns (Lissajous/Infinity curves), that demonstrates fleeing behaviour of boids.
 
 ## Performance Goals
 Target performance metrics for the optimization phase:

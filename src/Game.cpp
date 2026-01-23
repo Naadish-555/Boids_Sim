@@ -19,9 +19,18 @@ void Game::init(const std::string& path)
 		std::string input;
 		while (fin >> input)
 		{
+			std::cout << "Token Read: [" << input << "]" << std::endl;
+
+			if (input[0] == '#')
+			{
+				std::string dummy;
+				std::getline(fin, dummy);
+				continue; 
+			}
+
 			if (input == "Window" || input == "window")
 			{
-				fin >> m_windowConfig.WW >> m_windowConfig.WH >> m_windowConfig.FL >> m_windowConfig.FS;
+				fin >> m_windowConfig.WW >> m_windowConfig.WH >> m_windowConfig.R >> m_windowConfig.G >> m_windowConfig.B >> m_windowConfig.FL >> m_windowConfig.FS  ;
 
 			}
 
@@ -34,6 +43,21 @@ void Game::init(const std::string& path)
 					std::cout << "failed to load tech font from file";
 					exit(-1);
 				}
+			}
+			
+			else if (input == "Boid" || input == "boid")
+			{
+				fin >> m_boidConfig.BTS >> m_boidConfig.MN >> m_boidConfig.VD >> m_boidConfig.AD >> m_boidConfig.MaxBS >> m_boidConfig.MinBS >> m_boidConfig.SS;
+			}
+			
+			else if (input == "Flock" || input == "flock")
+			{
+				fin >> m_flockConfig.FSV >> m_flockConfig.FAV>> m_flockConfig.FCV;
+			}
+			
+			else if (input == "Predator" || input == "predator")
+			{
+				fin >> m_predatorConfig.LTM >> m_predatorConfig.FOV >> m_predatorConfig.FR >> m_predatorConfig.FS >> m_predatorConfig.LR >> m_predatorConfig.PS;
 			}
 
 			else
@@ -83,6 +107,9 @@ void Game::init(const std::string& path)
 		m_text.setPosition(0, 0);
 		m_gridLines.setPrimitiveType(sf::Lines);
 
+		defaultBoidParameters();
+		defaultFlockParameters();
+		defaultPredatorParameters();
 		//spawnPlayer();
 	}
 	else
@@ -140,11 +167,6 @@ void Game::setPaused(bool paused)
 	m_paused = !paused;
 }
 
-std::shared_ptr<Entity> Game::player()
-{
-	auto& players = m_entities.getEntities("Player");
-	return players.front();
-}
 
 void Game::sMovement(float dt)
 {
@@ -272,7 +294,8 @@ void Game::sUserInput()
 void Game::sRender()
 {
 	//TODO : change the code below to draw all of the entities in case of multiple species 
-	m_window.clear(sf::Color(25,25,25));
+	sf::Color bgColor = sf::Color(m_windowConfig.R, m_windowConfig.G, m_windowConfig.B);
+	m_window.clear(bgColor);
 
 	//Boids
 	auto& boids = m_entities.getEntities("Boid");
@@ -518,12 +541,19 @@ void Game::sGUI()
 		m_grid.init(m_window.getSize().x, m_window.getSize().y, newCellSize);
 		drawGrid();
 	}
-
+	if (ImGui::Button("Set default values##D1"))
+	{
+		defaultBoidParameters();
+	}
 	
 	ImGui::SeparatorText("Flocking parameters");
 	ImGui::SliderFloat("Separation", &m_seperationValue, 0.0f, 2.0f);
 	ImGui::SliderFloat("Alignment", &m_alignmentValue, 0.0f, 2.0f);
 	ImGui::SliderFloat("Cohesion", &m_cohesionValue, 0.0f, 2.0f);
+	if (ImGui::Button("Set default values##D2"))
+	{
+		defaultFlockParameters();
+	}
 	
 	ImGui::SeparatorText("Predator parameters");
 	ImGui::Checkbox("Predator Active", &m_predatorActive);
@@ -539,6 +569,10 @@ void Game::sGUI()
 	ImGui::SliderFloat("Fear Radius", &m_fearRadius, 0.0f, 300.0f);
 	ImGui::SliderFloat("Fear Strength", &m_fearStrength, 0.0f, 10.0f);
 	ImGui::SliderFloat("Predator FOV", &m_predatorFOV, 0.1f, 360.0f);
+	if (ImGui::Button("Set default values##D3"))
+	{
+		defaultPredatorParameters();
+	}
 
 	
 	ImGui::SeparatorText("Debug options");
@@ -869,4 +903,36 @@ void Game::spawnPredator()
 	boid->add<CTransform>(Vec2(mx,my), Vec2(0.1f,0.1f), 0.0f);
 
 
+}
+
+void Game::defaultBoidParameters()
+{
+
+	m_boidsToSpawn = m_boidConfig.BTS;
+	m_maxNeighbours = m_boidConfig.MN;
+	m_visionDistance = m_boidConfig.VD;
+	m_avoidDistance = m_boidConfig.AD;
+	m_maxBoidSpeed = m_boidConfig.MaxBS;
+	m_minBoidSpeed = m_boidConfig.MinBS;
+	m_steeringStrength = m_boidConfig.SS;
+}
+
+void Game::defaultFlockParameters()
+{
+
+	m_seperationValue = m_flockConfig.FSV;
+	m_alignmentValue = m_flockConfig.FAV;
+	m_cohesionValue = m_flockConfig.FCV;
+}
+
+void Game::defaultPredatorParameters()
+{
+	m_predatorLoopTraverseMode = m_predatorConfig.LTM;
+
+	m_predatorFOV = m_predatorConfig.FOV;
+	m_fearRadius = m_predatorConfig.FR;
+	m_fearStrength = m_predatorConfig.FS;
+	m_predatorDesiredLoopRadius = m_predatorConfig.LR;
+	m_predatorCurrentLoopRadius = m_predatorConfig.LR;
+	m_predatorSpeed = m_predatorConfig.PS;
 }

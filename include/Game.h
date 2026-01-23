@@ -9,8 +9,11 @@
 #include "imgui-SFML.h"
 #include "imguiThemes.h"
 
-struct WindowConfig { int WW, WH, FL, FS; };
-struct FontConfig	{ int S, R, G, B; std::string F; };
+struct WindowConfig { int WW = 1920, WH = 1080, R = 25, G = 25, B = 25 , FL = 60, FS = 0; };
+struct BoidsConfig { int BTS = 200, MN = 30;float VD = 45.0f, AD = 15.0f, MaxBS = 3.0f, MinBS = 0.1f, SS = 0.01f; };
+struct FlockConfig { float FSV = 1.5f, FAV = 1.0f, FCV = 1.0f; };
+struct PredatorConfig { int LTM = 2; float FOV = 150.0f, FR = 150.0f, FS = 3.0f, LR = 150.0f, PS = 150.0f ; };
+struct FontConfig	{ int S = 24, R = 255, G =255 , B=255; std::string F = ""; };
 
 class Game
 {
@@ -20,6 +23,9 @@ class Game
 	sf::Text			m_text;							//the score text to be drawn to the screen
 	sf::Clock			m_deltaClock;					//for imgui 
 	WindowConfig		m_windowConfig;
+	BoidsConfig			m_boidConfig;
+	PredatorConfig		m_predatorConfig;
+	FlockConfig			m_flockConfig;
 	FontConfig			m_fontConfig;
 	int					m_score = 0;
 	int					m_currentFrame = 0;
@@ -37,6 +43,7 @@ class Game
 	float				m_seperationValue	= 1.5f;
 	float				m_alignmentValue	= 1.0f;
 	float				m_cohesionValue		= 1.0f;
+
 	float				m_visionDistance	= 45.0f;
 	float				m_avoidDistance		= 15.0f;
 	float				m_maxBoidSpeed		= 3.0f;
@@ -73,7 +80,6 @@ class Game
 	void init(const std::string& config);				//intializing game state with a config file path
 	void setPaused(bool paused);						//pause the game
 
-	std::shared_ptr<Entity> player();
 
 	void sMovement(float dt);							//System : Entity position / movement update
 	void sUserInput();									//System : User Input
@@ -95,6 +101,9 @@ class Game
 
 	void spawnPredator();
 
+	void defaultBoidParameters();
+	void defaultFlockParameters();
+	void defaultPredatorParameters();
 
 
 
