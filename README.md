@@ -10,11 +10,11 @@ This project explores Emergent Behavior and Optimization Algorithms in game deve
 
 
 ## Key Features
-Core Boids Logic: Complete implementation of Alignment, Cohesion, and Separation forces.
-Spatial Optimization: Custom Uniform Grid (Spatial Hashing) to reduce neighbor search complexity to approx $O(1)$.
-Batch Rendering: Replaced standard OOP rendering with Vertex Arrays to reduce draw calls from $N$ to 1 per frame.
-ImGui Integration: Real-time parameter tuning for velocity, grid, and debugging visualization.
-Predator-Prey Dynamics: Introduced "Predator" agent with parametric movement patterns (Lissajous/Infinity curves), that demonstrates fleeing behaviour of boids.
+* Core Boids Logic: Complete implementation of Alignment, Cohesion, and Separation forces.
+* Spatial Optimization: Custom Uniform Grid (Spatial Hashing) to reduce neighbor search complexity to approx $O(1)$.
+* Batch Rendering: Replaced standard OOP rendering with Vertex Arrays to reduce draw calls from $N$ to 1 per frame.
+* ImGui Integration: Real-time parameter tuning for velocity, grid, and debugging visualization.
+* Predator-Prey Dynamics: Introduced "Predator" agent with parametric movement patterns (Lissajous/Infinity curves), that demonstrates fleeing behaviour of boids.
 
 ## Performance Goals
 Target performance metrics for the optimization phase:
