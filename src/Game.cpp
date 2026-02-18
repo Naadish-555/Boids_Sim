@@ -96,7 +96,7 @@ void Game::init(const std::string& path)
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		io.FontGlobalScale = 1.5f;
 		ImGuiStyle& style = ImGui::GetStyle();
-		style.Colors[ImGuiCol_WindowBg].w = 0.5f;
+		style.Colors[ImGuiCol_WindowBg].w = 0.95f;
 		//style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 
 
