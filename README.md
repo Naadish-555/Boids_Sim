@@ -8,7 +8,7 @@
 ## Overview
 This project explores Emergent Behavior and Optimization Algorithms in game development. It implements the classic "Boids" rules (Alignment, Cohesion, Separation) alongside a predator that demonstrates fleeing behaviour of boids, using SFML for rendering.
 
-[![Watch the Optimization Demo](assets/boids_thumbnail.jpg))](https://youtu.be/ABwELov5KoY)
+[![Watch the Optimization Demo](assets/boids_thumbnail.png))](https://youtu.be/ABwELov5KoY)
 
 > **Watch the full Demo on YouTube by clicking onn the above thumbnail/picture**
 
