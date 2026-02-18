@@ -1,4 +1,4 @@
-# Optimized Multi-Agent Boids Simulation (WIP)
+# Optimized Multi-Agent Boids Simulation 
 
 ![C++](https://img.shields.io/badge/Language-C++-00599C?style=for-the-badge&logo=c%2B%2B)
 ![SFML](https://img.shields.io/badge/Graphics-SFML-8A2BE2?style=for-the-badge&logo=sfml)
@@ -8,6 +8,7 @@
 ## Overview
 This project explores Emergent Behavior and Optimization Algorithms in game development. It implements the classic "Boids" rules (Alignment, Cohesion, Separation) alongside a predator that demonstrates fleeing behaviour of boids, using SFML for rendering.
 
+![Demo](assets/boids_swarm2.webp)
 
 ## Key Features
 * Core Boids Logic: Complete implementation of Alignment, Cohesion, and Separation forces.
