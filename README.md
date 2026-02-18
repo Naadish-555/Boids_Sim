@@ -8,14 +8,14 @@
 ## Overview
 This project explores Emergent Behavior and Optimization Algorithms in game development. It implements the classic "Boids" rules (Alignment, Cohesion, Separation) alongside a predator that demonstrates fleeing behaviour of boids, using SFML for rendering.
 
-![Demo](assets/boids_swarm.webp)
-
-
-[![Watch the Optimization Demo](https://img.youtube.com/vi/llf5dKBb6bk/maxresdefault.jpg)](https://youtu.be/llf5dKBb6bk)
+[![Watch the Optimization Demo](assets/boids_thumbnail.jpg))](https://youtu.be/ABwELov5KoY)
 
 > **Watch the full Demo on YouTube by clicking onn the above thumbnail/picture**
 
 ## Key Features
+
+![Demo](assets/boids_swarm.webp)
+
 * Core Boids Logic: Complete implementation of Alignment, Cohesion, and Separation forces.
 * Spatial Optimization: Custom Uniform Grid (Spatial Hashing) to reduce neighbor search complexity to approx $O(1)$.
 * Batch Rendering: Replaced standard OOP rendering with Vertex Arrays to reduce draw calls from $N$ to 1 per frame.
